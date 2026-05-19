@@ -17,8 +17,7 @@ const SplashScreen = () => {
   return (
     <PageWrapper>
       <div className="h-screen flex flex-col items-center justify-center animate-fade-in">
-        <Logo width="140px" />
-        <div className="text-6xl mt-4">🦚</div> {/* Placeholder Peacock */}
+        <Logo width="440px" />
       </div>
     </PageWrapper>
   );

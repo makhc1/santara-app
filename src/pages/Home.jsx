@@ -4,9 +4,11 @@ import PageWrapper from "../components/layout/PageWrapper";
 import BottomNav from "../components/layout/BottomNav";
 import Logo from "../components/Logo";
 import { ROUTES } from "../constants/routes";
+import { useAppContext } from "../context/AppContext"; // Import Context
 
 const Home = () => {
   const navigate = useNavigate();
+  const { setShowNotif } = useAppContext(); // Ambil fungsi trigger notif
 
   return (
     <PageWrapper className="!bg-[#f7f7f3]">
@@ -33,9 +35,10 @@ const Home = () => {
         <div className="flex items-start justify-between px-5 pt-4 pb-2 bg-white">
           <Logo width="140px" className="mt-2" />
           <div className="flex flex-col items-end gap-2 mt-2">
+            {/* Bell Icon - Trigger Notif */}
             <div
               className="relative cursor-pointer"
-              onClick={() => navigate(ROUTES.EMERGENCY)}
+              onClick={() => setShowNotif(true)}
             >
               <svg
                 width="28"
