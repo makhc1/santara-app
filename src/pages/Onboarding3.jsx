@@ -10,14 +10,12 @@ const Onboarding3 = () => {
   return (
     <PageWrapper>
       <div className="h-screen flex flex-col">
-        {/* GANTI: Pakai gambar asli dari folder public/assets/images */}
         <div className="h-[60%] w-full relative overflow-hidden">
           <img
             src="/assets/images/onboarding-3.jpg"
             alt="Onboarding 3"
             className="w-full h-full object-cover"
           />
-          {/* Phone mockup tetap di-overlay di atas gambar kalau mau, atau dihapus aja kalau gambar asli udah cukup bagus */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
             <div className="w-40 h-72 bg-gray-900 rounded-[30px] border-4 border-gray-800 shadow-xl flex items-center justify-center">
               <div className="w-36 h-64 bg-white rounded-[24px] overflow-hidden flex items-center justify-center text-muted text-xs">

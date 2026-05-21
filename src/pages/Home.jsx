@@ -244,44 +244,6 @@ const Home = () => {
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
             </div>
-
-            <div className="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] p-4 flex items-center mb-3 cursor-pointer hover:bg-gray-50 border-none">
-              <div className="w-12 h-12 rounded-[10px] bg-[#e8f5e9] flex items-center justify-center mr-4 flex-shrink-0">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#16a34a"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="12" y1="1" x2="12" y2="23"></line>
-                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-[14px] text-[#1A1A1A]">
-                  Voice Detection
-                </h4>
-                <p className="text-[12px] text-[#6B7280] truncate">
-                  Sound threat detection with auto-alerts
-                </p>
-              </div>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#6B7280"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="9 18 15 12 9 6"></polyline>
-              </svg>
-            </div>
           </div>
 
           {/* LOCATION PREVIEW SECTION */}
@@ -337,7 +299,6 @@ const Home = () => {
             </div>
           </div>
 
-          {/* VIEW FULL MAP BUTTON */}
           <div className="px-5 pb-4">
             <button className="w-full bg-[#F5A623] text-white font-bold text-[16px] py-4 rounded-[14px] flex items-center justify-center gap-2 shadow-[0_2px_12px_rgba(0,0,0,0.07)] hover:bg-[#e8961c] transition-colors border-none">
               <svg
@@ -358,8 +319,6 @@ const Home = () => {
             </button>
           </div>
         </div>{" "}
-        {/* End of Scroll Area */}
-        {/* BOTTOM NAV - Nempel di bawah, ga ikut scroll, ga nutupin konten */}
         <BottomNav />
       </div>
     </PageWrapper>
