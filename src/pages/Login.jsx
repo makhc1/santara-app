@@ -1,32 +1,52 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageWrapper from "../components/layout/PageWrapper";
-import Logo from "../components/Logo"; // GUA BALIKIN PAKE LOGO LO LAGI
+import Logo from "../components/Logo";
 import { ROUTES } from "../constants/routes";
-import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import {
+  GoogleAuthProvider,
+  signInWithRedirect,
+  getRedirectResult,
+} from "firebase/auth";
 import { auth } from "../firebase";
 
 const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Handle hasil redirect dari Google
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          navigate(ROUTES.HOME);
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect Result Error:", error);
+      });
+  }, []);
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      navigate(ROUTES.HOME);
+      setLoading(true);
+      await signInWithRedirect(auth, provider);
+      // Halaman akan redirect ke Google, lalu balik ke sini
+      // navigate() dipanggil di useEffect atas
     } catch (error) {
       console.error("Google Login Error:", error);
+      setLoading(false);
     }
   };
 
   return (
     <PageWrapper className="!bg-white">
       <div className="h-screen flex flex-col relative px-8 pt-10 pb-8">
-        {/* 1. LOGO SECTION - PAKAI LOGO LO */}
+        {/* 1. LOGO SECTION */}
         <div className="flex flex-col items-center mb-6">
           <Logo width="140px" className="mt-4" />
-
           <h2 className="font-sans font-bold text-[22px] text-[#1A1A1A] mt-6">
             Welcome Back
           </h2>
@@ -85,7 +105,7 @@ const Login = () => {
               </svg>
               <input
                 type={showPassword ? "text" : "password"}
-                value="•••••••••••"
+                placeholder="••••••••••••"
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#1A1A1A] ml-3 font-sans"
               />
               <button
@@ -143,18 +163,17 @@ const Login = () => {
               strokeLinejoin="round"
             >
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-              <line x1="14" y1="2" x2="22" y2="2"></line>
-              <line x1="18" y1="6" x2="22" y2="2"></line>
             </svg>
             <span className="font-sans font-medium text-[15px] text-[#1A1A1A]">
               Login With Phone
             </span>
           </button>
 
-          {/* Google - YANG BENERAN BERFUNGSI */}
+          {/* Google */}
           <button
             onClick={handleGoogleLogin}
-            className="w-full border border-[#E0E0E0] rounded-xl py-3.5 px-5 flex items-center gap-4 hover:bg-gray-50 transition-colors"
+            disabled={loading}
+            className="w-full border border-[#E0E0E0] rounded-xl py-3.5 px-5 flex items-center gap-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path
@@ -175,7 +194,7 @@ const Login = () => {
               />
             </svg>
             <span className="font-sans font-medium text-[15px] text-[#1A1A1A]">
-              Login With Google
+              {loading ? "Redirecting..." : "Login With Google"}
             </span>
           </button>
 
@@ -190,7 +209,7 @@ const Login = () => {
           </button>
         </div>
 
-        {/* 6. BOTTOM SIGN UP LINK (Fixed bottom) */}
+        {/* 6. BOTTOM SIGN UP LINK */}
         <div className="absolute bottom-8 left-0 right-0 text-center px-8">
           <p className="font-sans text-[13px] text-gray-500">
             Haven't any account?{" "}
