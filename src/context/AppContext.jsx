@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, getRedirectResult } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore"; // Import Firestore functions
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const AppContext = createContext();
 
@@ -13,29 +13,41 @@ export const AppProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Handle redirect result dulu sebelum onAuthStateChanged
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect error:", error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setIsLoggedIn(true);
 
-        // CEK & SIMPAN DATA USER KE FIRESTORE
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          // Kalau user baru (pertama kali login Google), buat document-nya
+          // User baru — buat doc dulu
           await setDoc(userDocRef, {
             email: user.email,
             displayName: user.displayName,
             photoURL: user.photoURL,
             createdAt: new Date(),
           });
-        }
 
-        
-        setUserData({
-          uid: user.uid,
-          ...userDoc.data(), // Gabungin data auth + data dari DB
-        });
+          // Set dari data Google Auth langsung
+          setUserData({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+          });
+        } else {
+          // User lama — ambil dari Firestore
+          setUserData({
+            uid: user.uid,
+            ...userDoc.data(),
+          });
+        }
       } else {
         setIsLoggedIn(false);
         setUserData(null);
