@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import PageWrapper from "../components/layout/PageWrapper";
 import Logo from "../components/Logo";
 import { ROUTES } from "../constants/routes";
-import { auth, db } from "../firebase";
+import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { useAppContext } from "../context/AppContext"; // tambahin ini
 
 const RegisterChild = () => {
   const navigate = useNavigate();
+  const { userData } = useAppContext(); // ambil userData dari context
   const [childName, setChildName] = useState("");
   const [gender, setGender] = useState("Boy");
   const [birthDate, setBirthDate] = useState("");
@@ -17,7 +19,7 @@ const RegisterChild = () => {
   const handleSaveChild = async () => {
     if (!childName) return alert("Masukkan nama anak");
 
-    if (!auth.currentUser) {
+    if (!userData?.uid) {
       alert("Kamu belum login!");
       navigate(ROUTES.LOGIN);
       return;
@@ -25,12 +27,7 @@ const RegisterChild = () => {
 
     setIsSaving(true);
     try {
-      const childrenRef = collection(
-        db,
-        "users",
-        auth.currentUser.uid,
-        "children",
-      );
+      const childrenRef = collection(db, "users", userData.uid, "children");
 
       await addDoc(childrenRef, {
         name: childName,
