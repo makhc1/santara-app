@@ -7,10 +7,21 @@ import { User, Mail, Phone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "../constants/routes";
 import { useAppContext } from "../context/AppContext";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { setShowNotif } = useAppContext();
+  const { userData } = useAppContext();
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate(ROUTES.LOGIN);
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
 
   return (
     <PageWrapper className="!bg-[#F2F2F7]">
@@ -44,15 +55,25 @@ const Profile = () => {
             <div className="w-6"></div>
           </div>
 
-          {/* Profile Info */}
+          {/* Profile Info - Ambil data dari Google Auth (userData) */}
           <div className="flex flex-col items-center p-6 bg-white">
-            <div className="w-20 h-20 bg-gray-100 rounded-full border-4 border-white shadow-md flex items-center justify-center mb-2 text-3xl">
-              🧑
+            <div className="w-20 h-20 bg-gray-100 rounded-full border-4 border-white shadow-md flex items-center justify-center mb-2 overflow-hidden">
+              {userData?.photoURL ? (
+                <img
+                  src={userData.photoURL}
+                  alt="Avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-3xl">🧑</span>
+              )}
             </div>
             <h3 className="font-display font-bold text-[18px] text-[#111]">
-              SANTARA
+              {userData?.displayName || "User"}
             </h3>
-            <p className="text-[#6B7280] text-[13px]">SANTARA@santara.com</p>
+            <p className="text-[#6B7280] text-[13px]">
+              {userData?.email || "email@example.com"}
+            </p>
           </div>
 
           {/* Parent Information */}
@@ -61,8 +82,16 @@ const Profile = () => {
               Parent Information
             </h3>
             <div className="bg-white rounded-2xl p-4 shadow-[0_2px_12px_rgba(0,0,0,0.07)] border-none">
-              <InputField icon={User} placeholder="Full name" />
-              <InputField icon={Mail} placeholder="Email address" />
+              <InputField
+                icon={User}
+                placeholder="Full name"
+                defaultValue={userData?.displayName || ""}
+              />
+              <InputField
+                icon={Mail}
+                placeholder="Email address"
+                defaultValue={userData?.email || ""}
+              />
               <InputField icon={Phone} placeholder="Phone number" />
               <Button variant="orange" className="h-[48px]">
                 Save
@@ -87,7 +116,7 @@ const Profile = () => {
                   <p className="text-[#6B7280] text-[13px]">7 years old</p>
                 </div>
                 <span className="text-[#6B7280] text-[12px]">
-                  Santara Doll
+                  🤖 Santara Doll
                 </span>
               </div>
               <button className="w-full h-12 border-2 border-dashed border-[#F5A623] rounded-xl text-[#F5A623] font-semibold hover:bg-orange-50 transition-colors">
@@ -98,9 +127,13 @@ const Profile = () => {
 
           {/* Logout */}
           <div className="px-5 pb-6">
-            <Button variant="danger"> LOG OUT</Button>
+            <Button variant="danger" onClick={handleLogout}>
+              🚪 LOG OUT
+            </Button>
           </div>
         </div>{" "}
+        {/* End of Scroll Area */}
+        {/* BOTTOM NAV - Di luar area scroll, nempel di bawah, ga nutupin apapun */}
         <BottomNav />
       </div>
     </PageWrapper>
