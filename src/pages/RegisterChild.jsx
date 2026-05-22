@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import PageWrapper from "../components/layout/PageWrapper";
 import Logo from "../components/Logo";
 import { ROUTES } from "../constants/routes";
-import { auth, db } from "../firebase"; // Import db
-import { collection, addDoc } from "firebase/firestore"; // Import Firestore functions
+import { auth, db } from "../firebase";
+import { collection, addDoc } from "firebase/firestore";
 
 const RegisterChild = () => {
   const navigate = useNavigate();
@@ -17,9 +17,14 @@ const RegisterChild = () => {
   const handleSaveChild = async () => {
     if (!childName) return alert("Masukkan nama anak");
 
+    if (!auth.currentUser) {
+      alert("Kamu belum login!");
+      navigate(ROUTES.LOGIN);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Referensi ke sub-collection 'children' di bawah user yang lagi login
       const childrenRef = collection(
         db,
         "users",
@@ -35,10 +40,10 @@ const RegisterChild = () => {
         createdAt: new Date(),
       });
 
-      navigate(ROUTES.HOME); // Sukses -> ke Home
+      navigate(ROUTES.HOME);
     } catch (error) {
       console.error("Error saving child data:", error);
-      alert("Gagal menyimpan data anak");
+      alert("Gagal menyimpan data anak. Error: " + error.message);
     } finally {
       setIsSaving(false);
     }
