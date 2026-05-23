@@ -8,6 +8,7 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../firebase";
 import { useAppContext } from "../context/AppContext";
@@ -17,6 +18,10 @@ const Login = () => {
   const { isLoggedIn } = useAppContext();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -36,11 +41,29 @@ const Login = () => {
       });
   }, []);
 
+  const handleEmailLogin = async () => {
+    if (!email || !password) return setError("Email dan password harus diisi");
+    setError("");
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate(ROUTES.HOME, { replace: true });
+    } catch (err) {
+      if (err.code === "auth/user-not-found") setError("Akun tidak ditemukan");
+      else if (err.code === "auth/wrong-password") setError("Password salah");
+      else if (err.code === "auth/invalid-email") setError("Email tidak valid");
+      else if (err.code === "auth/invalid-credential")
+        setError("Email atau password salah");
+      else setError("Login gagal, coba lagi");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      setLoading(true);
-      // Coba popup dulu, kalau gagal fallback ke redirect
+      setGoogleLoading(true);
       await signInWithPopup(auth, provider);
       navigate(ROUTES.HOME, { replace: true });
     } catch (error) {
@@ -48,19 +71,18 @@ const Login = () => {
         error.code === "auth/popup-blocked" ||
         error.code === "auth/popup-closed-by-user"
       ) {
-        // Fallback ke redirect kalau popup diblock
         await signInWithRedirect(auth, provider);
       } else {
         console.error("Google Login Error:", error);
-        setLoading(false);
+        setGoogleLoading(false);
       }
     }
   };
 
   return (
     <PageWrapper className="!bg-white">
-      <div className="h-screen flex flex-col relative px-8 pt-10 pb-8">
-        {/* 1. LOGO SECTION */}
+      <div className="h-screen flex flex-col relative px-8 pt-10 pb-8 overflow-y-auto">
+        {/* 1. LOGO */}
         <div className="flex flex-col items-center mb-6">
           <Logo width="140px" className="mt-4" />
           <h2 className="font-sans font-bold text-[22px] text-[#1A1A1A] mt-6">
@@ -73,11 +95,14 @@ const Login = () => {
 
         {/* 2. INPUT FIELDS */}
         <div className="space-y-4 mb-2">
+          {/* Email */}
           <div>
             <label className="block text-[12px] text-[#888] mb-1 font-sans">
               Email\Phone Number
             </label>
-            <div className="flex items-center border border-[#DADADA] rounded-[10px] h-[48px] px-4">
+            <div
+              className={`flex items-center border rounded-[10px] h-[48px] px-4 ${error ? "border-red-400" : "border-[#DADADA]"}`}
+            >
               <svg
                 width="18"
                 height="18"
@@ -94,16 +119,21 @@ const Login = () => {
               <input
                 type="text"
                 placeholder="Santara@santara.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#1A1A1A] ml-3 font-sans placeholder:text-[#999]"
               />
             </div>
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-[12px] text-[#888] mb-1 font-sans">
               Password
             </label>
-            <div className="flex items-center border border-[#DADADA] rounded-[10px] h-[48px] px-4">
+            <div
+              className={`flex items-center border rounded-[10px] h-[48px] px-4 ${error ? "border-red-400" : "border-[#DADADA]"}`}
+            >
               <svg
                 width="18"
                 height="18"
@@ -120,6 +150,9 @@ const Login = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailLogin()}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#1A1A1A] ml-3 font-sans"
               />
               <button
@@ -136,25 +169,43 @@ const Login = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  {showPassword ? (
+                    <>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </>
+                  )}
                 </svg>
               </button>
             </div>
           </div>
         </div>
 
-        <p className="text-[13px] text-black font-sans mt-2 cursor-pointer">
+        {/* Error message */}
+        {error && (
+          <p className="text-red-500 text-[12px] mt-1 font-sans">{error}</p>
+        )}
+
+        <p className="text-[13px] text-black font-sans mt-2 cursor-pointer hover:text-[#F4A124] transition-colors">
           Forget password?
         </p>
 
         {/* 3. LOGIN BUTTON */}
-        <button className="w-full bg-[#1A1A1A] text-white font-sans font-bold uppercase tracking-widest text-[15px] rounded-[10px] py-4 mt-5 hover:bg-gray-900 transition-colors">
-          LOGIN
+        <button
+          onClick={handleEmailLogin}
+          disabled={loading}
+          className="w-full bg-[#1A1A1A] text-white font-sans font-bold uppercase tracking-widest text-[15px] rounded-[10px] py-4 mt-5 hover:bg-gray-900 transition-colors disabled:opacity-50"
+        >
+          {loading ? "LOGGING IN..." : "LOGIN"}
         </button>
 
         {/* 4. DIVIDER */}
-        <div className="flex items-center my-6">
+        <div className="flex items-center my-5">
           <div className="flex-1 h-px bg-gray-300"></div>
           <span className="px-3 text-[11px] text-gray-400 font-sans uppercase tracking-wider">
             Or continue with
@@ -164,6 +215,7 @@ const Login = () => {
 
         {/* 5. SOCIAL LOGIN BUTTONS */}
         <div className="space-y-3">
+          {/* Phone */}
           <button className="w-full border border-[#E0E0E0] rounded-xl py-3.5 px-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
             <svg
               width="20"
@@ -182,9 +234,10 @@ const Login = () => {
             </span>
           </button>
 
+          {/* Google */}
           <button
             onClick={handleGoogleLogin}
-            disabled={loading}
+            disabled={googleLoading}
             className="w-full border border-[#E0E0E0] rounded-xl py-3.5 px-5 flex items-center gap-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <svg width="20" height="20" viewBox="0 0 24 24">
@@ -206,10 +259,11 @@ const Login = () => {
               />
             </svg>
             <span className="font-sans font-medium text-[15px] text-[#1A1A1A]">
-              {loading ? "Loading..." : "Login With Google"}
+              {googleLoading ? "Loading..." : "Login With Google"}
             </span>
           </button>
 
+          {/* Apple */}
           <button className="w-full border border-[#E0E0E0] rounded-xl py-3.5 px-5 flex items-center gap-4 hover:bg-gray-50 transition-colors">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#111">
               <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
@@ -221,7 +275,7 @@ const Login = () => {
         </div>
 
         {/* 6. BOTTOM SIGN UP LINK */}
-        <div className="absolute bottom-8 left-0 right-0 text-center px-8">
+        <div className="mt-8 text-center">
           <p className="font-sans text-[13px] text-gray-500">
             Haven't any account?{" "}
             <span

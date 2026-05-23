@@ -2,25 +2,87 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageWrapper from "../components/layout/PageWrapper";
 import Logo from "../components/Logo";
-import InputField from "../components/ui/InputField";
-import Button from "../components/ui/Button";
-import { User, Mail, Calendar, Phone, Lock, ChevronDown } from "lucide-react";
+import { User, Mail, Phone, Lock, ChevronDown } from "lucide-react";
 import { ROUTES } from "../constants/routes";
+import {
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signOut,
+} from "firebase/auth";
+import { auth, db } from "../firebase";
+import { doc, setDoc } from "firebase/firestore";
 
 const Register = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleRegister = () => {
-    navigate(ROUTES.REGISTER_CHILD);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const handleRegister = async () => {
+    setError("");
+
+    if (!fullName || !email || !password || !confirmPassword) {
+      return setError("Semua field harus diisi");
+    }
+    if (password !== confirmPassword) {
+      return setError("Password tidak cocok");
+    }
+    if (password.length < 6) {
+      return setError("Password minimal 6 karakter");
+    }
+
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password,
+      );
+      const user = userCredential.user;
+
+      await updateProfile(user, { displayName: fullName });
+
+      await setDoc(doc(db, "users", user.uid), {
+        displayName: fullName,
+        email: email,
+        phoneNumber: phone,
+        birthDate: birthDate,
+        photoURL: null,
+        createdAt: new Date(),
+      });
+
+      // Logout dulu biar user harus login manual
+      await signOut(auth);
+      navigate(ROUTES.LOGIN, { replace: true });
+    } catch (err) {
+      if (err.code === "auth/email-already-in-use")
+        setError("Email sudah terdaftar");
+      else if (err.code === "auth/invalid-email")
+        setError("Format email tidak valid");
+      else if (err.code === "auth/weak-password")
+        setError("Password terlalu lemah");
+      else setError("Registrasi gagal, coba lagi");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <PageWrapper className="!bg-white">
       <div className="flex flex-col h-screen px-6 pt-8 pb-6">
         <div className="flex items-center justify-between mb-6">
-          <button onClick={() => navigate(-1)} className="focus:outline-none">
+          <button
+            onClick={() => navigate(-1)}
+            className="focus:outline-none text-[24px]"
+          >
             ←
           </button>
           <Logo width="100px" />
@@ -31,7 +93,8 @@ const Register = () => {
           Create Your Account
         </h2>
         <p className="text-[13px] text-[#555] text-center mb-6">
-          Set up your parent account to start protecting your child.
+          Set up your parent account to start protecting your child with
+          Santara.
         </p>
 
         <div className="flex-1 overflow-y-auto space-y-[14px] mb-4">
@@ -44,6 +107,8 @@ const Register = () => {
               <input
                 type="text"
                 placeholder="SAMMY"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#111] ml-3 font-medium uppercase"
               />
             </div>
@@ -58,6 +123,8 @@ const Register = () => {
               <input
                 type="email"
                 placeholder="SANTARA@santara.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#111] ml-3 font-medium"
               />
             </div>
@@ -71,6 +138,8 @@ const Register = () => {
               <input
                 type="text"
                 placeholder="14/03/1996"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#111] font-medium"
               />
               <ChevronDown size={18} className="text-[#333]" />
@@ -86,6 +155,8 @@ const Register = () => {
               <input
                 type="tel"
                 placeholder="085659085578"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#111] ml-3 font-medium"
               />
             </div>
@@ -100,6 +171,8 @@ const Register = () => {
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#111] ml-3 font-medium"
               />
               <button
@@ -114,8 +187,17 @@ const Register = () => {
                   stroke="#999"
                   strokeWidth="1.5"
                 >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  {showPassword ? (
+                    <>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </>
+                  )}
                 </svg>
               </button>
             </div>
@@ -130,6 +212,8 @@ const Register = () => {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full h-full bg-transparent outline-none text-[14px] text-[#111] ml-3 font-medium"
               />
               <button
@@ -144,24 +228,43 @@ const Register = () => {
                   stroke="#999"
                   strokeWidth="1.5"
                 >
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                  {showConfirmPassword ? (
+                    <>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </>
+                  )}
                 </svg>
               </button>
             </div>
           </div>
         </div>
 
+        {error && (
+          <p className="text-red-500 text-[12px] text-center mb-2">{error}</p>
+        )}
+
         <p className="text-[12px] text-[#666] mb-4 text-center">
           By registering, you agree to the{" "}
-          <span className="text-primary underline">Terms and Conditions</span>
+          <span className="text-primary underline cursor-pointer">
+            Terms and Conditions
+          </span>
         </p>
 
-        <Button variant="filled" onClick={handleRegister}>
-          AGREE & CONTINUE
-        </Button>
+        <button
+          onClick={handleRegister}
+          disabled={loading}
+          className="w-full h-[50px] bg-[#111111] text-white font-bold text-[14px] tracking-[1px] uppercase rounded-[10px] hover:bg-black transition-colors disabled:opacity-50"
+        >
+          {loading ? "LOADING..." : "AGREE & CONTINUE"}
+        </button>
 
-        <p className="text-center text-muted text-[14px] mt-4 mb-2">
+        <p className="text-center text-[14px] mt-4 mb-2 text-[#666]">
           Already Have an Account?{" "}
           <span
             className="text-primary font-bold cursor-pointer"

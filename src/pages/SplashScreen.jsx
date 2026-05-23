@@ -4,16 +4,25 @@ import PageWrapper from "../components/layout/PageWrapper";
 import Logo from "../components/Logo";
 import { ROUTES } from "../constants/routes";
 import { motion } from "framer-motion";
+import { useAppContext } from "../context/AppContext";
 
 const SplashScreen = () => {
   const navigate = useNavigate();
+  const { isLoggedIn, loading } = useAppContext();
 
   useEffect(() => {
+    if (loading) return;
+
     const timer = setTimeout(() => {
-      navigate(ROUTES.ONBOARDING_1);
+      if (isLoggedIn) {
+        navigate(ROUTES.HOME, { replace: true });
+      } else {
+        navigate(ROUTES.ONBOARDING_1, { replace: true });
+      }
     }, 2500);
+
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [loading, isLoggedIn]);
 
   return (
     <PageWrapper className="!bg-white">

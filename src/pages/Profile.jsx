@@ -203,7 +203,7 @@ const Profile = () => {
                     </p>
                   </div>
                   <span className="text-[#6B7280] text-[12px]">
-                    🤖 Santara Doll
+                    Santara Doll
                   </span>
                 </div>
               ))}
@@ -224,7 +224,7 @@ const Profile = () => {
           {/* Logout */}
           <div className="px-5 pb-6">
             <Button variant="danger" onClick={handleLogout}>
-              🚪 LOG OUT
+              LOG OUT
             </Button>
           </div>
         </div>
