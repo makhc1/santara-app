@@ -1,8 +1,9 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation, Navigate } from "react-router-dom";
 import React, { Suspense } from "react";
-import { AnimatePresence } from "framer-motion"; // Import Framer Motion
+import { AnimatePresence } from "framer-motion";
 import { ROUTES } from "../constants/routes";
 import PageWrapper from "../components/layout/PageWrapper";
+import { useAppContext } from "../context/AppContext";
 
 const SplashScreen = React.lazy(() => import("../pages/SplashScreen"));
 const Onboarding1 = React.lazy(() => import("../pages/Onboarding1"));
@@ -17,8 +18,24 @@ const DetailTracking = React.lazy(() => import("../pages/DetailTracking"));
 const EmergencyAlerts = React.lazy(() => import("../pages/EmergencyAlerts"));
 const Profile = React.lazy(() => import("../pages/Profile"));
 
+// Hanya bisa diakses kalau SUDAH login
+const ProtectedRoute = ({ children }) => {
+  const { isLoggedIn, loading } = useAppContext();
+  if (loading) return null;
+  if (!isLoggedIn) return <Navigate to={ROUTES.LOGIN} replace />;
+  return children;
+};
+
+// Hanya bisa diakses kalau BELUM login (Login, Register)
+const GuestRoute = ({ children }) => {
+  const { isLoggedIn, loading } = useAppContext();
+  if (loading) return null;
+  if (isLoggedIn) return <Navigate to={ROUTES.HOME} replace />;
+  return children;
+};
+
 const AppRoutes = () => {
-  const location = useLocation(); // Buat track lokasi halaman saat ini
+  const location = useLocation();
 
   return (
     <Suspense
@@ -30,21 +47,76 @@ const AppRoutes = () => {
         </PageWrapper>
       }
     >
-      {/* AnimatePresence buat nge-track masuk/keluar halaman */}
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
+          {/* Public routes */}
           <Route path={ROUTES.SPLASH} element={<SplashScreen />} />
           <Route path={ROUTES.ONBOARDING_1} element={<Onboarding1 />} />
           <Route path={ROUTES.ONBOARDING_2} element={<Onboarding2 />} />
           <Route path={ROUTES.ONBOARDING_3} element={<Onboarding3 />} />
           <Route path={ROUTES.ONBOARDING_4} element={<Onboarding4 />} />
-          <Route path={ROUTES.LOGIN} element={<Login />} />
-          <Route path={ROUTES.REGISTER} element={<Register />} />
-          <Route path={ROUTES.REGISTER_CHILD} element={<RegisterChild />} />
-          <Route path={ROUTES.HOME} element={<Home />} />
-          <Route path={ROUTES.DETAIL_TRACKING} element={<DetailTracking />} />
-          <Route path={ROUTES.EMERGENCY} element={<EmergencyAlerts />} />
-          <Route path={ROUTES.PROFILE} element={<Profile />} />
+
+          {/* Guest only - kalau udah login redirect ke HOME */}
+          <Route
+            path={ROUTES.LOGIN}
+            element={
+              <GuestRoute>
+                <Login />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path={ROUTES.REGISTER}
+            element={
+              <GuestRoute>
+                <Register />
+              </GuestRoute>
+            }
+          />
+
+          {/* Protected - harus login dulu */}
+          <Route
+            path={ROUTES.HOME}
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.DETAIL_TRACKING}
+            element={
+              <ProtectedRoute>
+                <DetailTracking />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.EMERGENCY}
+            element={
+              <ProtectedRoute>
+                <EmergencyAlerts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path={ROUTES.PROFILE}
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* RegisterChild - protected, hanya dari Profile */}
+          <Route
+            path={ROUTES.REGISTER_CHILD}
+            element={
+              <ProtectedRoute>
+                <RegisterChild />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </AnimatePresence>
     </Suspense>

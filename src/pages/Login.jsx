@@ -5,26 +5,25 @@ import Logo from "../components/Logo";
 import { ROUTES } from "../constants/routes";
 import {
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
 } from "firebase/auth";
 import { auth } from "../firebase";
-import { useAppContext } from "../context/AppContext"; // tambahin ini
+import { useAppContext } from "../context/AppContext";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { isLoggedIn } = useAppContext(); // tambahin ini
+  const { isLoggedIn } = useAppContext();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Kalau udah login, langsung ke HOME
   useEffect(() => {
     if (isLoggedIn) {
       navigate(ROUTES.HOME, { replace: true });
     }
   }, [isLoggedIn]);
 
-  // Handle hasil redirect dari Google
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
@@ -41,10 +40,20 @@ const Login = () => {
     const provider = new GoogleAuthProvider();
     try {
       setLoading(true);
-      await signInWithRedirect(auth, provider);
+      // Coba popup dulu, kalau gagal fallback ke redirect
+      await signInWithPopup(auth, provider);
+      navigate(ROUTES.HOME, { replace: true });
     } catch (error) {
-      console.error("Google Login Error:", error);
-      setLoading(false);
+      if (
+        error.code === "auth/popup-blocked" ||
+        error.code === "auth/popup-closed-by-user"
+      ) {
+        // Fallback ke redirect kalau popup diblock
+        await signInWithRedirect(auth, provider);
+      } else {
+        console.error("Google Login Error:", error);
+        setLoading(false);
+      }
     }
   };
 
@@ -197,7 +206,7 @@ const Login = () => {
               />
             </svg>
             <span className="font-sans font-medium text-[15px] text-[#1A1A1A]">
-              {loading ? "Redirecting..." : "Login With Google"}
+              {loading ? "Loading..." : "Login With Google"}
             </span>
           </button>
 
